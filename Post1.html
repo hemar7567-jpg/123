@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CryptoMiner Pro</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg0: #06060f;
+  --bg1: #0d0d20;
+  --bg2: #13132a;
+  --bg3: #1a1a38;
+  --accent: #00e5ff;
+  --accent2: #7c3aed;
+  --gold: #ffd700;
+  --gold2: #ff9500;
+  --green: #00ff88;
+  --red: #ff3b5c;
+  --purple: #a855f7;
+  --border: rgba(255,255,255,0.07);
+  --border-accent: rgba(0,229,255,0.25);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+
+html, body {
+  background:var(--bg0);
+  color:#fff;
+  font-family:'Space Grotesk',sans-serif;
+  height: 100dvh; /* было height:100% → стало 100dvh для iOS */
+  overflow: hidden;
+}
+
+#particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.4;}
+
+.app{position:relative;z-index:1;max-width:430px;margin:0 auto;display:flex;flex-direction:column;height:100dvh;overflow:hidden;} /* было height:100% → стало 100dvh */
+.app-scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;} /* добавлено overscroll-behavior:contain для iOS */
+
+.topbar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 12px;
+  background:var(--bg1);
+  border-bottom:1px solid var(--border);
+  z-index:50;flex-shrink:0;
+}
+.tb-avatar{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent2),var(--accent));
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.tb-info{flex:1;min-width:0;}
+.tb-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tb-level{font-size:10px;color:var(--accent);font-family:'Orbitron',monospace;letter-spacing:1px;}
+.tb-right{display:flex;align-items:center;gap:6px;}
+.tb-ton{
+  background:rgba(0,100,255,0.15);border:1px solid rgba(0,100,255,0.3);
+  border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;
+  color:#4a9eff;cursor:pointer;white-space:nowrap;touch-action:manipulation;
+}
+.tb-ton.connected{color:var(--green);border-color:rgba(0,255,136,0.3);background:rgba(0,255,136,0.08);}
+
+.balance-section{
+  padding:14px 12px 10px;
+  background:var(--bg1);
+  text-align:center;
+  border-bottom:1px solid var(--border);
+}
+.balance-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px;}
+.balance-num{
+  font-family:'Orbitron',monospace;font-size:30px;font-weight:900;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  background-clip:text;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  letter-spacing:1px;
+}
+.balance-icon{font-size:24px;}
+.balance-sub{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:1px;}
+
+.passive-row{
+  display:flex;align-items:center;justify-content:center;gap:16px;
+  margin-top:8px;
+}
+.passive-pill{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:20px;padding:4px 12px;font-size:11px;
+  display:flex;align-items:center;gap:5px;
+}
+.passive-pill span{color:var(--green);font-weight:700;font-family:'Orbitron',monospace;font-size:10px;}
+
+.energy-row{margin-top:10px;padding:0 4px;}
+.energy-head{display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.35);margin-bottom:4px;}
+.energy-track{height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;}
+.energy-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:3px;transition:width .3s;}
+
+.coin-zone{
+  display:flex;flex-direction:column;align-items:center;
+  padding:16px 12px 10px;
+  position:relative;
+}
+
+.boost-active-bar{
+  width:100%;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.2);
+  border-radius:10px;padding:6px 14px;margin-bottom:10px;
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;font-weight:700;color:var(--gold);
+}
+.boost-active-bar.hidden{display:none;}
+.boost-timer{font-family:'Orbitron',monospace;font-size:11px;}
+
+.combo-bar{
+  position:absolute;top:8px;right:12px;
+  background:var(--bg2);border:1px solid var(--border-accent);
+  border-radius:10px;padding:4px 10px;font-size:11px;
+  font-family:'Orbitron',monospace;color:var(--accent);
+  opacity:0;transition:opacity .3s;
+}
+.combo-bar.visible{opacity:1;}
+
+.coin-outer{
+  position:relative;width:190px;height:190px;
+  display:flex;align-items:center;justify-content:center;
+}
+.coin-ring{
+  position:absolute;border-radius:50%;
+  border:1.5px solid rgba(0,229,255,.15);
+  animation:rspin linear infinite;
+}
+.r1{width:180px;height:180px;animation-duration:10s;}
+.r2{width:158px;height:158px;animation-duration:7s;animation-direction:reverse;border-style:dashed;border-color:rgba(124,58,237,.2);}
+.r3{width:136px;height:136px;animation-duration:14s;border-color:rgba(255,215,0,.1);}
+@keyframes rspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+.coin{
+  width:120px;height:120px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;z-index:2;
+  flex-shrink:0;touch-action:manipulation;
+}
+.coin:active{transform:scale(.88);}
+
+.skin-btc .coin{background:radial-gradient(circle at 35% 35%,#ffe566,#f7931a 55%,#c06a0a);box-shadow:0 0 40px rgba(247,147,26,.5),inset 0 -5px 10px rgba(0,0,0,.3),inset 0 4px 8px rgba(255,255,255,.25);}
+.skin-eth .coin{background:radial-gradient(circle at 35% 35%,#b3c6ff,#627eea 55%,#3a4fcf);box-shadow:0 0 40px rgba(98,126,234,.6),inset 0 -5px 10px rgba(0,0,0,.3);}
+.skin-ton .coin{background:radial-gradient(circle at 35% 35%,#a0d4ff,#0088cc 55%,#005a99);box-shadow:0 0 40px rgba(0,136,204,.6),inset 0 -5px 10px rgba(0,0,0,.3);}
+.skin-doge .coin{background:radial-gradient(circle at 35% 35%,#fffacc,#c2a83e 55%,#8a6e1a);box-shadow:0 0 40px rgba(194,168,62,.5),inset 0 -5px 10px rgba(0,0,0,.3);}
+.skin-sol .coin{background:radial-gradient(circle at 35% 35%,#ffa3ff,#9945ff 55%,#6424c0);box-shadow:0 0 40px rgba(153,69,255,.6),inset 0 -5px 10px rgba(0,0,0,.3);}
+.skin-xrp .coin{background:radial-gradient(circle at 35% 35%,#c0f8ff,#00aad4 55%,#007a99);box-shadow:0 0 40px rgba(0,170,212,.5),inset 0 -5px 10px rgba(0,0,0,.3);}
+
+.coin-label{font-size:44px;pointer-events:none;}
+.coin-inner{position:absolute;width:104px;height:104px;border-radius:50%;border:2px solid rgba(255,255,255,.15);pointer-events:none;}
+
+.tap-hint{font-size:11px;color:rgba(255,255,255,.25);letter-spacing:2px;margin-top:10px;animation:phint 2.5s ease-in-out infinite;}
+@keyframes phint{0%,100%{opacity:.25}50%{opacity:.55}}
+
+.floater{
+  position:fixed;pointer-events:none;z-index:200;
+  font-family:'Orbitron',monospace;font-weight:700;
+  font-size:18px;color:var(--gold);
+  text-shadow:0 0 10px rgba(255,200,0,.8);
+  animation:floatup .9s ease-out forwards;
+}
+@keyframes floatup{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-90px) scale(1.4)}}
+
+.nav{
+  display:flex;gap:2px;padding:8px 10px;
+  background:var(--bg1);border-top:1px solid var(--border);
+  z-index:50;flex-shrink:0;
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 2px;border-radius:10px;cursor:pointer;
+  font-size:9px;font-weight:600;color:rgba(255,255,255,.35);
+  transition:all .2s;letter-spacing:.5px;text-transform:uppercase;
+  touch-action:manipulation;
+}
+.nav-btn .nav-icon{font-size:20px;}
+.nav-btn.active{color:var(--accent);background:rgba(0,229,255,.07);}
+.nav-badge{
+  position:absolute;top:-2px;right:-2px;
+  width:8px;height:8px;border-radius:50%;background:var(--red);
+}
+.nav-icon-wrap{position:relative;display:inline-block;}
+
+.page{display:none;flex-direction:column;gap:10px;padding:10px 12px 20px;}
+.page.active{display:flex;}
+
+.sec-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:2px;
+}
+.sec-title{font-size:13px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase;}
+.sec-sub{font-size:11px;color:rgba(255,255,255,.25);}
+
+.card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;
+}
+.card.glow-accent{border-color:var(--border-accent);}
+.card.glow-gold{border-color:rgba(255,215,0,.25);}
+.card.glow-green{border-color:rgba(0,255,136,.2);}
+
+.upg-item{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  cursor:pointer;transition:background .15s;
+  border-bottom:1px solid var(--border);touch-action:manipulation;
+}
+.upg-item:last-child{border-bottom:none;}
+.upg-item:active{background:rgba(255,255,255,.03);}
+.upg-icon{font-size:30px;min-width:38px;text-align:center;}
+.upg-body{flex:1;min-width:0;}
+.upg-name{font-size:13px;font-weight:700;margin-bottom:1px;}
+.upg-desc{font-size:10px;color:rgba(255,255,255,.35);margin-bottom:5px;}
+.upg-prog{height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
+.upg-bar{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:2px;transition:width .3s;}
+.upg-right{text-align:right;min-width:64px;}
+.upg-cost{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--gold);}
+.upg-lvl{font-size:9px;color:rgba(255,255,255,.3);margin-top:2px;}
+.upg-maxed{font-size:11px;color:var(--green);font-weight:700;}
+.upg-item.can-buy .upg-name{color:var(--accent);}
+.upg-item.can-buy{border-left:3px solid var(--accent);}
+.upg-item.maxed{opacity:.55;cursor:default;}
+
+.miner-item{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s;touch-action:manipulation;
+}
+.miner-item:last-child{border-bottom:none;}
+.miner-item:active{background:rgba(255,255,255,.03);}
+.miner-icon{font-size:28px;min-width:38px;text-align:center;}
+.miner-body{flex:1;min-width:0;}
+.miner-name{font-size:13px;font-weight:700;}
+.miner-rate{font-size:10px;color:var(--green);}
+.miner-cost{font-size:10px;color:rgba(255,255,255,.3);margin-top:2px;}
+.miner-right{text-align:right;min-width:48px;}
+.miner-count{font-family:'Orbitron',monospace;font-size:16px;font-weight:700;color:var(--accent);}
+.miner-item.can-buy .miner-name{color:var(--green);}
+.miner-item.can-buy{border-left:3px solid var(--green);}
+
+.boost-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.boost-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+  padding:12px;text-align:center;cursor:pointer;transition:all .2s;
+  position:relative;overflow:hidden;touch-action:manipulation;
+}
+.boost-card:active{transform:scale(.97);}
+.boost-card.active-boost{border-color:rgba(255,215,0,.4);background:rgba(255,215,0,.05);}
+.boost-card.on-cooldown{opacity:.5;cursor:default;}
+.boost-icon{font-size:32px;margin-bottom:6px;}
+.boost-name{font-size:12px;font-weight:700;margin-bottom:3px;}
+.boost-desc{font-size:10px;color:rgba(255,255,255,.35);margin-bottom:6px;line-height:1.4;}
+.boost-btn{
+  background:rgba(0,229,255,.1);border:1px solid var(--border-accent);
+  border-radius:8px;padding:5px 8px;font-size:10px;font-weight:700;
+  color:var(--accent);font-family:'Orbitron',monospace;
+  cursor:pointer;width:100%;touch-action:manipulation;
+}
+.boost-cd{font-size:10px;color:var(--red);font-family:'Orbitron',monospace;margin-top:4px;}
+.boost-free-tag{
+  position:absolute;top:6px;right:6px;
+  background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.3);
+  border-radius:5px;padding:2px 5px;font-size:8px;font-weight:700;color:var(--green);
+}
+
+.quest-item{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  border-bottom:1px solid var(--border);
+}
+.quest-item:last-child{border-bottom:none;}
+.quest-icon{font-size:26px;min-width:36px;text-align:center;}
+.quest-body{flex:1;min-width:0;}
+.quest-name{font-size:12px;font-weight:700;margin-bottom:3px;}
+.quest-prog-row{display:flex;align-items:center;gap:8px;}
+.quest-track{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
+.quest-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:2px;transition:width .5s;}
+.quest-pct{font-size:9px;color:rgba(255,255,255,.3);min-width:28px;text-align:right;}
+.quest-reward{
+  background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.2);
+  border-radius:8px;padding:4px 8px;font-size:10px;font-weight:700;
+  color:var(--gold);white-space:nowrap;cursor:pointer;touch-action:manipulation;
+}
+.quest-reward.done{background:rgba(0,255,136,.08);border-color:rgba(0,255,136,.2);color:var(--green);}
+.quest-reward.claimed{background:rgba(255,255,255,.04);border-color:var(--border);color:rgba(255,255,255,.2);cursor:default;}
+
+.skin-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.skin-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+  padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s;
+  position:relative;touch-action:manipulation;
+}
+.skin-card.active{border-color:var(--gold);box-shadow:0 0 16px rgba(255,215,0,.2);}
+.skin-card.locked{opacity:.5;}
+.skin-card:active{transform:scale(.97);}
+.skin-preview{font-size:44px;margin-bottom:6px;}
+.skin-name{font-size:12px;font-weight:700;margin-bottom:3px;}
+.skin-unlock{font-size:10px;color:rgba(255,255,255,.3);}
+.skin-active-tag{
+  position:absolute;top:6px;right:6px;
+  background:rgba(255,215,0,.15);border:1px solid rgba(255,215,0,.3);
+  border-radius:5px;padding:2px 5px;font-size:8px;font-weight:700;color:var(--gold);
+}
+.skin-lock-icon{position:absolute;top:6px;left:6px;font-size:14px;opacity:.6;}
+
+.leader-item{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  border-bottom:1px solid var(--border);
+}
+.leader-item:last-child{border-bottom:none;}
+.leader-rank{
+  font-family:'Orbitron',monospace;font-size:13px;font-weight:700;
+  min-width:28px;text-align:center;color:rgba(255,255,255,.3);
+}
+.leader-rank.gold{color:var(--gold);}
+.leader-rank.silver{color:#c0c0c0;}
+.leader-rank.bronze{color:#cd7f32;}
+.leader-ava{
+  width:34px;height:34px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+}
+.leader-body{flex:1;min-width:0;}
+.leader-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.leader-sub{font-size:10px;color:rgba(255,255,255,.3);}
+.leader-score{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:var(--gold);text-align:right;}
+.leader-item.is-me{background:rgba(0,229,255,.04);}
+
+.ref-card{
+  background:var(--bg2);border:1px solid var(--border-accent);border-radius:16px;
+  padding:16px;
+}
+.ref-title{font-size:16px;font-weight:700;margin-bottom:4px;}
+.ref-desc{font-size:12px;color:rgba(255,255,255,.4);line-height:1.5;margin-bottom:14px;}
+.ref-link-box{
+  background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;font-family:monospace;font-size:11px;color:var(--accent);
+  word-break:break-all;margin-bottom:10px;
+}
+.ref-actions{display:flex;gap:8px;}
+.ref-btn{
+  flex:1;padding:10px;border-radius:10px;border:none;
+  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .2s;touch-action:manipulation;
+}
+.ref-btn.copy{background:rgba(0,229,255,.1);color:var(--accent);border:1px solid var(--border-accent);}
+.ref-btn.share{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;}
+.ref-btn:active{transform:scale(.97);}
+
+.ref-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.ref-stat{
+  background:var(--bg3);border-radius:10px;padding:10px;text-align:center;
+}
+.ref-stat-val{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--accent);}
+.ref-stat-lbl{font-size:10px;color:rgba(255,255,255,.3);margin-top:2px;}
+
+.ton-card{
+  background:linear-gradient(135deg,rgba(0,80,160,.15),rgba(0,136,204,.1));
+  border:1px solid rgba(0,136,204,.3);border-radius:16px;padding:16px;
+}
+.ton-logo{font-size:36px;margin-bottom:8px;}
+.ton-title{font-size:15px;font-weight:700;margin-bottom:4px;}
+.ton-desc{font-size:11px;color:rgba(255,255,255,.4);line-height:1.5;margin-bottom:14px;}
+.ton-addr{
+  background:rgba(0,0,0,.3);border:1px solid rgba(0,136,204,.2);
+  border-radius:10px;padding:8px 12px;font-family:monospace;font-size:10px;
+  color:#4a9eff;word-break:break-all;margin-bottom:10px;
+}
+.ton-connect-btn{
+  width:100%;padding:12px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,#0088cc,#005a99);color:#fff;
+  font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .2s;touch-action:manipulation;
+}
+.ton-connect-btn:active{transform:scale(.98);}
+.ton-exchange{
+  margin-top:14px;background:var(--bg3);border-radius:12px;padding:12px;
+}
+.ton-exch-title{font-size:12px;font-weight:700;margin-bottom:10px;color:rgba(255,255,255,.6);}
+.ton-rate{display:flex;align-items:center;justify-content:space-between;font-size:12px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.ton-rate span:first-child{color:rgba(255,255,255,.4);}
+.ton-rate span:last-child{font-weight:700;font-family:'Orbitron',monospace;font-size:11px;}
+.ton-withdraw-row{display:flex;gap:8px;}
+.ton-input{
+  flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+  padding:8px 10px;color:#fff;font-family:'Exo 2',sans-serif;font-size:13px;
+  outline:none;
+}
+.ton-withdraw-btn{
+  padding:8px 14px;border-radius:8px;border:none;
+  background:rgba(0,136,204,.2);color:#4a9eff;font-weight:700;font-size:12px;
+  cursor:pointer;white-space:nowrap;touch-action:manipulation;
+}
+
+.ach-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.ach-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+  padding:12px;text-align:center;transition:all .3s;
+}
+.ach-card.unlocked{border-color:rgba(255,215,0,.3);background:rgba(255,215,0,.04);}
+.ach-card-icon{font-size:30px;margin-bottom:5px;filter:grayscale(1);transition:filter .3s;}
+.ach-card.unlocked .ach-card-icon{filter:none;}
+.ach-card-name{font-size:11px;font-weight:700;margin-bottom:2px;}
+.ach-card-desc{font-size:9px;color:rgba(255,255,255,.3);}
+.ach-card.unlocked .ach-card-desc{color:var(--gold);}
+
+.notif{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%);
+  background:var(--bg3);border:1px solid var(--accent);
+  border-radius:12px;padding:9px 20px;font-size:12px;font-weight:700;color:var(--accent);
+  z-index:1000;white-space:nowrap;
+  animation:nin .25s ease,nout .25s ease 1.75s forwards;
+  box-shadow:0 0 20px rgba(0,229,255,.2);
+}
+@keyframes nin{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes nout{to{opacity:0;transform:translateX(-50%) translateY(-8px)}}
+
+.lvlup-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  animation:fadein .3s ease;
+}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.lvlup-box{
+  background:var(--bg2);border:2px solid var(--gold);border-radius:24px;
+  padding:32px;text-align:center;max-width:280px;
+  box-shadow:0 0 60px rgba(255,215,0,.3);
+}
+.lvlup-emoji{font-size:64px;margin-bottom:12px;}
+.lvlup-title{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:var(--gold);margin-bottom:6px;}
+.lvlup-sub{font-size:14px;color:rgba(255,255,255,.6);margin-bottom:20px;}
+.lvlup-btn{
+  padding:12px 32px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,var(--gold2),var(--gold));
+  color:#000;font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;
+  cursor:pointer;touch-action:manipulation;
+}
+
+.divider{height:1px;background:var(--border);margin:4px 0;}
+.tag{display:inline-block;padding:2px 7px;border-radius:5px;font-size:9px;font-weight:700;letter-spacing:.5px;}
+.tag-new{background:rgba(0,229,255,.12);color:var(--accent);border:1px solid rgba(0,229,255,.2);}
+.tag-hot{background:rgba(255,59,92,.12);color:var(--red);border:1px solid rgba(255,59,92,.2);}
+.tag-soon{background:rgba(255,255,255,.06);color:rgba(255,255,255,.3);border:1px solid var(--border);}
+
+.empty-state{text-align:center;padding:30px 20px;color:rgba(255,255,255,.2);font-size:13px;}
+.empty-icon{font-size:40px;margin-bottom:8px;}
+
+/* Индикатор соединения */
+.conn-indicator{
+  position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
+  background:rgba(255,59,92,.15);border:1px solid rgba(255,59,92,.3);
+  border-radius:10px;padding:6px 16px;font-size:11px;font-weight:700;
+  color:var(--red);z-index:900;white-space:nowrap;
+  animation:nin .25s ease;
+  display:none;
+}
+.conn-indicator.visible{display:block;}
+</style>
+</head>
+<body>
+<canvas id="particles"></canvas>
+
+<!-- Индикатор потери соединения -->
+<div class="conn-indicator" id="conn-indicator">📡 Нет соединения</div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="tb-avatar" id="tb-avatar">👤</div>
+    <div class="tb-info">
+      <div class="tb-name" id="tb-name">Игрок</div>
+      <div class="tb-level" id="tb-level">УРОВЕНЬ 1 · НОВИЧОК</div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-ton" id="ton-btn" onclick="openTonPage()">💎 TON</div>
+    </div>
+  </div>
+
+  <div class="app-scroll">
+    <div class="balance-section">
+      <div class="balance-row">
+        <div class="balance-icon" id="bal-icon">₿</div>
+        <div class="balance-num" id="balance-display">0</div>
+      </div>
+      <div class="balance-sub">ВАШИ МОНЕТЫ</div>
+      <div class="passive-row">
+        <div class="passive-pill">⛏️ <span id="passive-display">0.0</span>/сек</div>
+        <div class="passive-pill">👆 <span id="tap-display">1</span>/тап</div>
+      </div>
+      <div class="energy-row">
+        <div class="energy-head"><span>⚡ Энергия</span><span id="energy-text">100/100</span></div>
+        <div class="energy-track"><div class="energy-fill" id="energy-fill" style="width:100%"></div></div>
+      </div>
+    </div>
+
+    <div class="coin-zone" id="coin-zone" style="display:none;">
+      <div class="boost-active-bar hidden" id="boost-active-bar">
+        <span id="boost-active-name">⚡ Буст активен</span>
+        <span class="boost-timer" id="boost-timer">30s</span>
+      </div>
+      <div class="combo-bar" id="combo-bar">COMBO x<span id="combo-val">1</span></div>
+      <div class="coin-outer">
+        <div class="coin-ring r1"></div>
+        <div class="coin-ring r2"></div>
+        <div class="coin-ring r3"></div>
+        <div class="coin skin-btc" id="main-coin" onclick="handleTap(event)">
+          <div class="coin-inner"></div>
+          <span class="coin-label" id="coin-label">₿</span>
+        </div>
+      </div>
+      <div class="tap-hint">▼ ТАП ЧТОБЫ МАЙНИТЬ ▼</div>
+    </div>
+
+    <div class="page active" id="page-mine">
+      <div class="sec-head"><div class="sec-title">⚡ Апгрейды тапа</div></div>
+      <div class="card" id="tap-upgrades-list"></div>
+      <div class="sec-head"><div class="sec-title">⛏️ Пассивные майнеры</div></div>
+      <div class="card" id="miners-list"></div>
+    </div>
+
+    <div class="page" id="page-boosts">
+      <div class="sec-head">
+        <div class="sec-title">🚀 Бусты</div>
+        <div class="sec-sub">Временные усилители</div>
+      </div>
+      <div class="boost-grid" id="boosts-grid"></div>
+      <div class="sec-head" style="margin-top:6px;"><div class="sec-title">📋 Квесты</div></div>
+      <div class="card" id="quests-list"></div>
+    </div>
+
+    <div class="page" id="page-skins">
+      <div class="sec-head">
+        <div class="sec-title">🎨 Скины монеты</div>
+        <div class="sec-sub">Меняй внешний вид</div>
+      </div>
+      <div class="skin-grid" id="skins-grid"></div>
+      <div class="sec-head" style="margin-top:6px;"><div class="sec-title">🏅 Достижения</div></div>
+      <div class="ach-grid" id="ach-grid"></div>
+    </div>
+
+    <div class="page" id="page-leaders">
+      <div class="sec-head">
+        <div class="sec-title">🏆 Таблица лидеров</div>
+        <div class="sec-sub" id="leader-update">Обновлено только что</div>
+      </div>
+      <div class="card" id="leaders-list"></div>
+      <div class="sec-head" style="margin-top:6px;"><div class="sec-title">👥 Рефералы</div></div>
+      <div class="ref-card">
+        <div class="ref-title">Приглашай друзей 🤝</div>
+        <div class="ref-desc">За каждого друга ты получаешь <b style="color:var(--gold)">+5,000 монет</b>. Друг получает <b style="color:var(--accent)">+2,000 монет</b> на старте.</div>
+        <div class="ref-link-box" id="ref-link">t.me/CryptoMinerBot?start=ref_XXXXXXXX</div>
+        <div class="ref-actions">
+          <button class="ref-btn copy" onclick="copyRef()">📋 Копировать</button>
+          <button class="ref-btn share" onclick="shareRef()">📤 Поделиться</button>
+        </div>
+        <div class="ref-stats">
+          <div class="ref-stat"><div class="ref-stat-val" id="ref-count">0</div><div class="ref-stat-lbl">Друзей</div></div>
+          <div class="ref-stat"><div class="ref-stat-val" id="ref-earned">0</div><div class="ref-stat-lbl">Заработано</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-ton">
+      <div class="ton-card">
+        <div class="ton-logo">💎</div>
+        <div class="ton-title">TON Кошелёк</div>
+        <div class="ton-desc" id="ton-desc">Подключи TON кошелёк и выводи заработанные монеты. Курс: 1,000,000 монет = 1 TON</div>
+        <div class="ton-addr" id="ton-addr-display" style="display:none;"></div>
+        <button class="ton-connect-btn" id="ton-connect-btn" onclick="toggleTon()">🔗 Подключить кошелёк</button>
+        <div class="ton-exchange" id="ton-exchange" style="display:none;">
+          <div class="ton-exch-title">💱 Вывод монет</div>
+          <div class="ton-rate"><span>Курс обмена</span><span id="ton-rate">1,000,000 🪙 = 1 TON</span></div>
+          <div class="ton-rate"><span>Доступно</span><span id="ton-available">0 TON</span></div>
+          <div class="ton-withdraw-row">
+            <input class="ton-input" id="ton-amount" type="number" placeholder="Сумма в TON" min="0.1" step="0.1">
+            <button class="ton-withdraw-btn" onclick="withdrawTon()">ВЫВЕСТИ</button>
+          </div>
+        </div>
+      </div>
+      <div class="card glow-accent" style="padding:14px;">
+        <div class="sec-title" style="margin-bottom:10px;">📊 Статистика</div>
+        <div style="display:flex;flex-direction:column;gap:8px;" id="stats-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="nav-btn active" id="nav-mine" onclick="switchPage('mine',this)">
+      <div class="nav-icon-wrap"><span class="nav-icon">⛏️</span></div>
+      МАЙНИТЬ
+    </div>
+    <div class="nav-btn" id="nav-boosts" onclick="switchPage('boosts',this)">
+      <div class="nav-icon-wrap"><span class="nav-icon">🚀</span><div class="nav-badge" id="quest-badge" style="display:none;"></div></div>
+      ЗАДАНИЯ
+    </div>
+    <div class="nav-btn" id="nav-skins" onclick="switchPage('skins',this)">
+      <div class="nav-icon-wrap"><span class="nav-icon">🎨</span></div>
+      СКИНЫ
+    </div>
+    <div class="nav-btn" id="nav-leaders" onclick="switchPage('leaders',this)">
+      <div class="nav-icon-wrap"><span class="nav-icon">🏆</span></div>
+      ТОП
+    </div>
+    <div class="nav-btn" id="nav-ton" onclick="switchPage('ton',this)">
+      <div class="nav-icon-wrap"><span class="nav-icon">💎</span></div>
+      TON
+    </div>
+  </div>
+</div>
+
+<div class="lvlup-overlay" id="lvlup-overlay" style="display:none;" onclick="closeLvlUp()">
+  <div class="lvlup-box" onclick="event.stopPropagation()">
+    <div class="lvlup-emoji">🎉</div>
+    <div class="lvlup-title">УРОВЕНЬ <span id="lvlup-num">2</span>!</div>
+    <div class="lvlup-sub" id="lvlup-sub">Новые возможности разблокированы</div>
+    <button class="lvlup-btn" onclick="closeLvlUp()">ПРОДОЛЖИТЬ</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ================================================================
+  // МОДУЛЬ: telegram.js — Инициализация WebApp, haptic, initData
+  // ================================================================
+
+  const SAVE_KEY = 'cmc_v3';
+  let _initData = '';
+  let _userId = '';
+  let _isOnline = navigator.onLine;
+
+  function getInitData() {
+    if (_initData) return _initData;
+    try { _initData = window.Telegram?.WebApp?.initData || ''; } catch (e) { _initData = ''; }
+    return _initData;
+  }
+
+  function haptic(style) {
+    try {
+      if (window.Telegram?.WebApp?.HapticFeedback) {
+        Telegram.WebApp.HapticFeedback.impactOccurred(style);
+      }
+    } catch (e) {}
+  }
+
+  // ================================================================
+  // МОДУЛЬ: storage.js — API-клиент, saveGame, loadGame, синхронизация
+  // ================================================================
+
+  // было: нет API-слоя → стало: централизованный API-клиент с авторизацией
+  const API_BASE = ''; // В проде: 'https://your-domain.com'
+
+  async function api(method, path, body) {
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'tma ' + getInitData(),
+    };
+    const opts = { method, headers };
+    if (body && method !== 'GET') opts.body = JSON.stringify(body);
+
+    try {
+      const resp = await fetch(API_BASE + path, opts);
+
+      if (resp.status === 401) {
+        showNotif('🔒 Ошибка авторизации — перезапустите приложение');
+        return null;
+      }
+
+      // было: нет обработки rate limit → стало: обработка 429
+      if (resp.status === 429) {
+        const data = await resp.json().catch(() => ({}));
+        showNotif('⚠️ Слишком быстро! ' + (data.currentTps || '') + ' тапов/сек');
+        return null;
+      }
+
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        console.error('[API ERROR]', path, data);
+        return null;
+      }
+
+      return await resp.json();
+    } catch (e) {
+      console.error('[API FETCH ERROR]', e.message);
+      return null;
+    }
+  }
+
+  // Сервер → клиент: перезаписываем G данными с сервера
+  function applyServerState(serverState) {
+    if (!serverState) return;
+    for (const key in serverState) {
+      if (G.hasOwnProperty(key)) G[key] = serverState[key];
+    }
+    G.maxEnergy = getMaxEnergy();
+  }
+
+  // было: loadGame() только из localStorage + офлайн на клиенте
+  // стало: сначала сервер, localStorage — фоллбэк, офлайн-доход на сервере
+  async function loadGameFromServer() {
+    const result = await api('GET', '/api/state');
+    if (result && result.ok && result.state) {
+      applyServerState(result.state);
+      if (result.offlineEarned > 1) {
+        setTimeout(() => showNotif('💤 Офлайн: +' + fmt(result.offlineEarned) + ' монет за ' + fmtTime(result.offlineSeconds || 0)), 600);
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function loadGameLocal() {
+    try {
+      const s = localStorage.getItem(SAVE_KEY);
+      if (s) {
+        const p = JSON.parse(s);
+        for (const key in G) {
+          if (p.hasOwnProperty(key)) G[key] = p[key];
+        }
+      }
+    } catch (e) {}
+  }
+
+  // было: saveGame() молча глотал ошибку
+  // стало: показывает уведомление + пробует удалить старые данные и пересохранить
+  function saveGame() {
+    G.lastSaved = Date.now();
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(G));
+    } catch (e) {
+      console.error('[SAVE ERROR]', e.message);
+      showNotif('⚠️ Не удалось сохранить прогресс');
+      // Пробуем очистить старые ключи и сохранить снова
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith('cmc_') && k !== SAVE_KEY) {
+            localStorage.removeItem(k);
+          }
+        }
+        localStorage.setItem(SAVE_KEY, JSON.stringify(G));
+      } catch (e2) {
+        console.error('[SAVE RETRY FAILED]', e2.message);
+      }
+    }
+  }
+
+  // было: нет обработки потери соединения
+  // стало: слушаем online/offline события
+  window.addEventListener('online', () => {
+    _isOnline = true;
+    document.getElementById('conn-indicator').classList.remove('visible');
+    showNotif('📡 Соединение восстановлено');
+    syncWithServer();
+  });
+
+  window.addEventListener('offline', () => {
+    _isOnline = false;
+    document.getElementById('conn-indicator').classList.add('visible');
+    showNotif('📡 Нет соединения — прогресс сохранится локально');
+  });
+
+  async function syncWithServer() {
+    const result = await api('POST', '/api/sync');
+    if (result && result.ok) {
+      applyServerState(result.state);
+      updateFastUI();
+    }
+  }
+
+  // ================================================================
+  // МОДУЛЬ: game.js — Вся игровая логика и данные
+  // ================================================================
+
+  const LEVELS = [
+    {lvl:1,name:'Новичок',xp:0},
+    {lvl:2,name:'Майнер',xp:500},
+    {lvl:3,name:'Ветеран',xp:2000},
+    {lvl:4,name:'Профи',xp:8000},
+    {lvl:5,name:'Эксперт',xp:25000},
+    {lvl:6,name:'Мастер',xp:80000},
+    {lvl:7,name:'Легенда',xp:250000},
+    {lvl:8,name:'Гений',xp:800000},
+    {lvl:9,name:'Элита',xp:2500000},
+    {lvl:10,name:'Бог крипты',xp:10000000},
+  ];
+
+  const TAP_UPGRADES = [
+    {id:'tu1',name:'Турбо-пальцы',desc:'каждый Ур. +2 к тапу',icon:'🖐️',maxLvl:10,baseCost:80,mult:2.8,tapBonus:2},
+    {id:'tu2',name:'Кибер-перчатки',desc:'каждый Ур. +8 к тапу',icon:'🥊',maxLvl:8,baseCost:600,mult:3.2,tapBonus:8},
+    {id:'tu3',name:'Нейро-чип',desc:'каждый Ур. +30 к тапу',icon:'🧠',maxLvl:6,baseCost:5000,mult:3.8,tapBonus:30},
+    {id:'tu4',name:'Квантовый тап',desc:'каждый Ур. +150 к тапу',icon:'⚛️',maxLvl:5,baseCost:40000,mult:4.5,tapBonus:150},
+    {id:'eu1',name:'Аккумулятор',desc:'каждый Ур. +100 энергии',icon:'🔋',maxLvl:10,baseCost:200,mult:2.5,energyBonus:100},
+    {id:'eu2',name:'Реактор энергии',desc:'каждый Ур. +500 энергии',icon:'⚡',maxLvl:6,baseCost:3000,mult:3.5,energyBonus:500},
+    {id:'mu1',name:'Мультипликатор x2',desc:'удваивает весь доход',icon:'✨',maxLvl:4,baseCost:15000,mult:8,multi:2},
+  ];
+
+  const MINERS = [
+    {id:'m1',name:'GPU карта',icon:'🖥️',baseCost:120,cMult:1.15,rate:0.5},
+    {id:'m2',name:'ASIC майнер',icon:'⚙️',baseCost:600,cMult:1.15,rate:3},
+    {id:'m3',name:'Крипто ферма',icon:'🏭',baseCost:2500,cMult:1.15,rate:15},
+    {id:'m4',name:'Дата центр',icon:'🌐',baseCost:12000,cMult:1.15,rate:80},
+    {id:'m5',name:'Квантовый PC',icon:'🔮',baseCost:60000,cMult:1.15,rate:500},
+    {id:'m6',name:'Лунный сервер',icon:'🌙',baseCost:350000,cMult:1.15,rate:3500},
+    {id:'m7',name:'Орбитальная станция',icon:'🛸',baseCost:2000000,cMult:1.15,rate:25000},
+  ];
+
+  const BOOSTS = [
+    {id:'b1',name:'Двойной тап',desc:'x2 за тап на 30 сек',icon:'👆',duration:30,mult:2,cooldown:300,cost:0},
+    {id:'b2',name:'Авто-тап',desc:'Автоматически тапает 10 раз/сек на 20 сек',icon:'🤖',duration:20,autoTap:10,cooldown:600,cost:0},
+    {id:'b3',name:'Суперзаряд',desc:'x5 за тап на 15 сек',icon:'⚡',duration:15,mult:5,cooldown:1800,cost:5000},
+    {id:'b4',name:'Золотой дождь',desc:'+1000 монет мгновенно',icon:'🌧️',duration:0,instant:1000,cooldown:3600,cost:0},
+    {id:'b5',name:'Энерго-восстановление',desc:'Полностью заряжает энергию',icon:'🔋',duration:0,fillEnergy:true,cooldown:900,cost:0},
+    {id:'b6',name:'Крипто-шторм',desc:'x10 за тап на 10 сек',icon:'🌪️',duration:10,mult:10,cooldown:7200,cost:50000},
+  ];
+
+  const QUESTS = [
+    {id:'q1',name:'Первые шаги',icon:'👣',type:'taps',target:100,reward:500,daily:false},
+    {id:'q2',name:'Кликер-мастер',icon:'🖱️',type:'taps',target:1000,reward:3000,daily:false},
+    {id:'q3',name:'Миллионер',icon:'💰',type:'earned',target:1000000,reward:50000,daily:false},
+    {id:'q4',name:'Фермер',icon:'🌾',type:'miners',target:5,reward:10000,daily:false},
+    {id:'q5',name:'Ежедневный тап',icon:'📅',type:'taps_today',target:500,reward:2000,daily:true},
+    {id:'q6',name:'Дневная добыча',icon:'☀️',type:'earned_today',target:10000,reward:5000,daily:true},
+    {id:'q7',name:'Апгрейд-маньяк',icon:'⬆️',type:'upgrades',target:10,reward:20000,daily:false},
+    {id:'q8',name:'Энерго-марафон',icon:'⚡',type:'energy_spent',target:2000,reward:15000,daily:false},
+  ];
+
+  const SKINS = [
+    {id:'btc',name:'Bitcoin',icon:'₿',cls:'skin-btc',unlockLvl:1,desc:'По умолчанию'},
+    {id:'eth',name:'Ethereum',icon:'Ξ',cls:'skin-eth',unlockLvl:2,desc:'Уровень 2'},
+    {id:'ton',name:'TON',icon:'💎',cls:'skin-ton',unlockLvl:3,desc:'Уровень 3'},
+    {id:'doge',name:'Dogecoin',icon:'Ð',cls:'skin-doge',unlockLvl:4,desc:'Уровень 4'},
+    {id:'sol',name:'Solana',icon:'◎',cls:'skin-sol',unlockLvl:6,desc:'Уровень 6'},
+    {id:'xrp',name:'XRP',icon:'✕',cls:'skin-xrp',unlockLvl:8,desc:'Уровень 8'},
+  ];
+
+  const ACHIEVEMENTS = [
+    {id:'a1',name:'Первый тап',icon:'👆',desc:'Сделай 1 тап',check:s=>s.totalTaps>=1},
+    {id:'a2',name:'Кликер',icon:'🖱️',desc:'1000 тапов',check:s=>s.totalTaps>=1000},
+    {id:'a3',name:'Тап-бог',icon:'👑',desc:'100K тапов',check:s=>s.totalTaps>=100000},
+    {id:'a4',name:'Сотня',icon:'🪙',desc:'100 монет',check:s=>s.totalEarned>=100},
+    {id:'a5',name:'Богач',icon:'💰',desc:'1M монет',check:s=>s.totalEarned>=1000000},
+    {id:'a6',name:'Миллиардер',icon:'💎',desc:'1МЛД монет',check:s=>s.totalEarned>=1000000000},
+    {id:'a7',name:'Фермер',icon:'⛏️',desc:'5 типов майнеров',check:s=>Object.values(s.miners).filter(v=>v>0).length>=5},
+    {id:'a8',name:'Ветеран',icon:'⭐',desc:'Уровень 5',check:s=>s.level>=5},
+  ];
+
+  // ─── STATE ───
+  let G = {
+    balance:0, totalEarned:0, totalTaps:0,
+    level:1, xp:0,
+    energy:100, maxEnergy:100,
+    upgrades:{}, miners:{},
+    boostCooldowns:{}, activeBoost:null, boostEnd:0,
+    quests:{}, questProgress:{taps_today:0,earned_today:0,energy_spent:0},
+    questLastDay:'',
+    skins:{btc:true}, activeSkin:'btc',
+    ton:{connected:false,addr:'',withdrawn:0},
+    referrals:0, refEarned:0,
+    referralSource:null,
+    upgradeCount:0,
+    lastSaved:Date.now(),
+    lastTick:Date.now(),
+    autoTapFraction:0
+  };
+
+  let combo = 0, comboTimer = null, currentPage = 'mine', lastLevel = 1;
+
+  // ─── COMPUTED ───
+
+  // было: m *= (1 + (cc-1)*0.1) — комбо не ограничено
+  // стало: максимальный множитель от комбо — x1.9
+  function getTapPower(){
+    let p = 1;
+    p += (G.upgrades.tu1||0)*2;
+    p += (G.upgrades.tu2||0)*8;
+    p += (G.upgrades.tu3||0)*30;
+    p += (G.upgrades.tu4||0)*150;
+    let m = getMulti();
+    if(G.activeBoost && Date.now() < G.boostEnd){
+      const b = BOOSTS.find(x=>x.id===G.activeBoost);
+      if(b&&b.mult) m *= b.mult;
+    }
+    // Было: m *= (1 + (cc-1)*0.1)
+    // Стало: ограничение комбо-множителя до x1.9
+    const comboMult = Math.min(1 + (Math.min(combo,10)-1)*0.1, 1.9);
+    if(combo > 1) m *= comboMult;
+    return Math.max(1, Math.floor(p*m));
+  }
+
+  function getMaxEnergy(){
+    let e = 100;
+    e += (G.upgrades.eu1||0)*100;
+    e += (G.upgrades.eu2||0)*500;
+    return e;
+  }
+
+  function getMulti(){
+    let m = 1;
+    const ml = G.upgrades.mu1||0;
+    if(ml>0) m *= Math.pow(2,ml);
+    return m;
+  }
+
+  function getPassiveRate(){
+    let r = 0;
+    for(const mn of MINERS) r += (G.miners[mn.id]||0)*mn.rate;
+    r *= getMulti();
+    if(G.activeBoost && Date.now()<G.boostEnd){
+      const b=BOOSTS.find(x=>x.id===G.activeBoost);
+      if(b&&b.mult) r *= b.mult;
+    }
+    return r;
+  }
+
+  function getMinerCost(mn){
+    return Math.floor(mn.baseCost * Math.pow(mn.cMult, G.miners[mn.id]||0));
+  }
+
+  function getUpgCost(u){
+    return Math.floor(u.baseCost * Math.pow(u.mult, G.upgrades[u.id]||0));
+  }
+
+  function computeLevel(){
+    for(let i=LEVELS.length-1;i>=0;i--){
+      if(G.totalEarned >= LEVELS[i].xp) return LEVELS[i];
+    }
+    return LEVELS[0];
+  }
+
+  function getUserId(){
+    const tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id?.toString();
+    if(tgId) return tgId;
+    let stored = localStorage.getItem('cmc_user_id');
+    if(!stored){ stored = 'guest_'+Math.random().toString(36).slice(2,10); localStorage.setItem('cmc_user_id',stored); }
+    return stored;
+  }
+
+  function parseStartParam(){
+    const telegramStart = window.Telegram?.WebApp?.initDataUnsafe?.start_param || '';
+    const urlStart = new URLSearchParams(window.location.search).get('start') || '';
+    const source = telegramStart || urlStart;
+    const found = source.match(/ref_(.+)/);
+    return found ? found[1] : null;
+  }
+
+  // было: initReferral() начислял бонус локально
+  // стало: отправляем на сервер
+  async function initReferral(){
+    const ownId = getUserId();
+    _userId = ownId;
+    G.userId = ownId;
+    const refFrom = parseStartParam();
+    if(refFrom && refFrom !== ownId && !G.referralSource){
+      const result = await api('POST', '/api/referral', { from: refFrom });
+      if(result && result.ok){
+        applyServerState(result.state);
+        showNotif('🎁 Бонус за реферала: +' + (result.bonus||2000) + ' монет!');
+        updateFastUI();
+      }
+    }
+  }
+
+  // ================================================================
+  // МОДУЛЬ: game.js — Действия игрока
+  // ================================================================
+
+  // было: handleTap() напрямую мутировал G без сервера
+  // стало: оптимистичное обновление + батч-отправка на сервер + rate limit
+
+  let pendingTaps = 0;
+  let tapSyncTimer = null;
+  let lastComboForServer = 0;
+
+  function handleTap(e){
+    if(G.energy < 1){showNotif('⚡ Нет энергии! Восстанавливается...');return;}
+    haptic('light');
+
+    const power = getTapPower();
+    G.balance += power;
+    G.totalEarned += power;
+    G.totalTaps++;
+    G.energy = Math.max(0, G.energy-1);
+    G.questProgress.energy_spent = (G.questProgress.energy_spent||0)+1;
+    G.questProgress.taps_today = (G.questProgress.taps_today||0)+1;
+    G.questProgress.earned_today = (G.questProgress.earned_today||0)+power;
+
+    // было: нет округления float → стало: Math.round для устранения погрешности
+    G.balance = Math.round(G.balance * 100) / 100;
+    G.totalEarned = Math.round(G.totalEarned * 100) / 100;
+
+    combo++;
+    lastComboForServer = combo;
+    clearTimeout(comboTimer);
+    comboTimer = setTimeout(()=>{combo=0;updateComboUI();},1500);
+    updateComboUI();
+
+    spawnFloat(e.clientX, e.clientY, '+'+fmt(power));
+
+    // было: reflow-хак с classList.remove/add + void offsetWidth
+    // стало: Web Animations API — без reflow
+    const coin = document.getElementById('main-coin');
+    coin.animate([
+      {transform:'scale(1)'},
+      {transform:'scale(0.84)'},
+      {transform:'scale(1)'}
+    ], {duration:180, easing:'ease'});
+
+    // Батч-отправка тапов на сервер (rate limiting на сервере: макс 20/сек)
+    pendingTaps++;
+    if(!tapSyncTimer){
+      tapSyncTimer = setTimeout(flushTaps, 300);
+    }
+
+    checkQuests();
+    checkLevel();
+    updateFastUI();
+  }
+  window.handleTap = handleTap;
+
+  async function flushTaps(){
+    tapSyncTimer = null;
+    if(pendingTaps === 0) return;
+    const tapsToSend = pendingTaps;
+    const comboToSend = lastComboForServer;
+    pendingTaps = 0;
+
+    const result = await api('POST', '/api/tap', { count: tapsToSend, combo: comboToSend });
+    if(result && result.ok){
+      const diff = Math.abs(G.balance - result.state.balance);
+      if(diff > 1){
+        applyServerState(result.state);
+        updateFastUI();
+      }
+    }
+  }
+
+  function updateComboUI(){
+    const bar = document.getElementById('combo-bar');
+    document.getElementById('combo-val').textContent = combo;
+    bar.classList.toggle('visible', combo>1);
+  }
+
+  // ─── BUYS ───
+
+  async function buyUpgrade(id){
+    const u = TAP_UPGRADES.find(x=>x.id===id);
+    if(!u) return;
+    const lvl = G.upgrades[id]||0;
+    if(lvl>=u.maxLvl){showNotif('🔒 Максимальный уровень!');return;}
+    const cost = getUpgCost(u);
+    if(G.balance<cost){showNotif('❌ Недостаточно монет!');return;}
+
+    haptic('medium');
+
+    // Оптимистичное обновление
+    G.balance -= cost;
+    G.upgrades[id] = lvl+1;
+    G.upgradeCount = (G.upgradeCount||0)+1;
+    if(u.energyBonus) G.energy = Math.min(G.energy + u.energyBonus, getMaxEnergy());
+    showNotif('✅ '+u.name+' → Ур.'+(lvl+1));
+    updateFastUI();
+    updateListsUI();
+
+    // Отправка на сервер
+    const result = await api('POST', '/api/upgrade', {id});
+    if(result && result.ok){
+      applyServerState(result.state);
+      updateFastUI();
+    } else {
+      // Откат при ошибке
+      G.balance += cost;
+      G.upgrades[id] = lvl;
+      G.upgradeCount--;
+      showNotif('❌ Ошибка покупки — монеты возвращены');
+      updateFastUI();
+      updateListsUI();
+    }
+  }
+
+  async function buyMiner(id){
+    const mn = MINERS.find(x=>x.id===id);
+    if(!mn) return;
+    const cost = getMinerCost(mn);
+    if(G.balance<cost){showNotif('❌ Недостаточно монет!');return;}
+
+    haptic('medium');
+
+    G.balance -= cost;
+    G.miners[id] = (G.miners[id]||0)+1;
+    showNotif('⛏️ '+mn.name+' x'+G.miners[id]);
+    updateFastUI();
+    updateListsUI();
+
+    const result = await api('POST', '/api/miner', {id});
+    if(result && result.ok){
+      applyServerState(result.state);
+      updateFastUI();
+    } else {
+      G.balance += cost;
+      G.miners[id]--;
+      showNotif('❌ Ошибка покупки — монеты возвращены');
+      updateFastUI();
+      updateListsUI();
+    }
+  }
+
+  // ─── BOOSTS ───
+
+  async function activateBoost(id){
+    const b = BOOSTS.find(x=>x.id===id);
+    if(!b) return;
+    const now = Date.now();
+    const cd = G.boostCooldowns[id]||0;
+    if(now < cd){showNotif('⏳ Кулдаун: '+Math.ceil((cd-now)/1000)+'с');return;}
+    if(b.cost>0 && G.balance<b.cost){showNotif('❌ Нужно '+fmt(b.cost)+' монет');return;}
+
+    haptic('medium');
+
+    // Отправляем на сервер, при успехе — обновляем локально
+    const result = await api('POST', '/api/boost', {id});
+    if(result && result.ok){
+      applyServerState(result.state);
+      if(b.instant) showNotif('🌧️ +'+fmt(b.instant)+' монет!');
+      else if(b.fillEnergy) showNotif('🔋 Энергия восстановлена!');
+      else showNotif(b.icon+' '+b.name+' активирован!');
+      updateFastUI();
+      updateListsUI();
+    } else if(result === null){
+      showNotif('❌ Ошибка активации буста');
+    }
+  }
+
+  function updateBoostBar(){
+    const bar = document.getElementById('boost-active-bar');
+    if(G.activeBoost && Date.now()<G.boostEnd){
+      const b = BOOSTS.find(x=>x.id===G.activeBoost);
+      document.getElementById('boost-active-name').textContent = (b?b.icon+' '+b.name:'⚡ Буст');
+      bar.classList.remove('hidden');
+    } else {
+      bar.classList.add('hidden');
+      if(G.activeBoost) G.activeBoost=null;
+    }
+  }
+
+  // ─── QUESTS ───
+
+  function getQuestProgress(q){
+    switch(q.type){
+      case 'taps': return Math.min(G.totalTaps, q.target);
+      case 'earned': return Math.min(G.totalEarned, q.target);
+      case 'miners': return Math.min(Object.values(G.miners).filter(v=>v>0).length, q.target);
+      case 'upgrades': return Math.min(G.upgradeCount||0, q.target);
+      case 'taps_today': return Math.min(G.questProgress.taps_today||0, q.target);
+      case 'earned_today': return Math.min(G.questProgress.earned_today||0, q.target);
+      case 'energy_spent': return Math.min(G.questProgress.energy_spent||0, q.target);
+      default: return 0;
+    }
+  }
+
+  async function claimQuest(id){
+    const q = QUESTS.find(x=>x.id===id);
+    if(!q) return;
+    const prog = getQuestProgress(q);
+    if(prog < q.target){showNotif('⏳ Задание не выполнено');return;}
+    if(G.quests[id]==='claimed'){showNotif('✅ Уже получено!');return;}
+
+    haptic('medium');
+
+    const result = await api('POST', '/api/quest/claim', {id, reward: q.reward});
+    if(result && result.ok){
+      applyServerState(result.state);
+      showNotif('🎁 Получено '+fmt(q.reward)+' монет!');
+      updateFastUI();
+      updateListsUI();
+    }
+  }
+
+  function checkQuests(){
+    let hasReady = false;
+    for(const q of QUESTS){
+      if(G.quests[q.id]==='claimed') continue;
+      if(getQuestProgress(q)>=q.target) hasReady = true;
+    }
+    const badge = document.getElementById('quest-badge');
+    if(badge) badge.style.display = hasReady ? 'block' : 'none';
+  }
+
+  // ─── SKINS ───
+
+  function selectSkin(id){
+    const sk = SKINS.find(x=>x.id===id);
+    if(!sk) return;
+    const lvl = computeLevel().lvl;
+    if(sk.unlockLvl > lvl){showNotif('🔒 Нужен уровень '+sk.unlockLvl);return;}
+    G.activeSkin = id;
+    G.skins[id] = true;
+    applySkin();
+    showNotif('🎨 Скин '+sk.name+' применён!');
+    updateListsUI();
+    api('POST', '/api/skin', {id}); // Фоновая отправка
+  }
+
+  function applySkin(){
+    const coin = document.getElementById('main-coin');
+    const sk = SKINS.find(x=>x.id===G.activeSkin)||SKINS[0];
+    SKINS.forEach(s=>coin.classList.remove(s.cls));
+    coin.classList.add(sk.cls);
+    document.getElementById('coin-label').textContent = sk.icon;
+    document.getElementById('bal-icon').textContent = sk.icon;
+  }
+
+  // ─── TON WALLET ───
+
+  function toggleTon(){
+    haptic('medium');
+    if(G.ton.connected){
+      G.ton.connected = false;
+      G.ton.addr = '';
+      updateTonUI();
+      showNotif('💎 Кошелёк отключён');
+    } else {
+      G.ton.connected = true;
+      G.ton.addr = 'UQB...'+Math.random().toString(36).slice(2,8).toUpperCase();
+      updateTonUI();
+      showNotif('✅ TON кошелёк подключён!');
+      const btn = document.getElementById('ton-btn');
+      if(btn) btn.classList.add('connected');
+    }
+    saveGame();
+    updateListsUI();
+  }
+  window.toggleTon = toggleTon;
+
+  function openTonPage(){ switchPage('ton', document.getElementById('nav-ton')); }
+  window.openTonPage = openTonPage;
+
+  function updateTonUI(){
+    const connected = G.ton.connected;
+    const btn = document.getElementById('ton-connect-btn');
+    const addrEl = document.getElementById('ton-addr-display');
+    const exchange = document.getElementById('ton-exchange');
+    const desc = document.getElementById('ton-desc');
+    const topBtn = document.getElementById('ton-btn');
+    if(connected){
+      btn.textContent = '🔓 Отключить кошелёк';
+      addrEl.textContent = G.ton.addr;
+      addrEl.style.display='block';
+      exchange.style.display='block';
+      desc.textContent = 'Кошелёк подключён. Выводи монеты в TON!';
+      if(topBtn){topBtn.classList.add('connected');topBtn.textContent='✅ TON';}
+    } else {
+      btn.textContent = '🔗 Подключить кошелёк';
+      addrEl.style.display='none';
+      exchange.style.display='none';
+      desc.textContent = 'Подключи TON кошелёк и выводи заработанные монеты. Курс: 1,000,000 монет = 1 TON';
+      if(topBtn){topBtn.classList.remove('connected');topBtn.textContent='💎 TON';}
+    }
+  }
+
+  function withdrawTon(){
+    if(!G.ton.connected){showNotif('❌ Сначала подключи кошелёк!');return;}
+    const input = document.getElementById('ton-amount');
+    const amount = parseFloat(input.value)||0;
+    if(amount<=0){showNotif('❌ Введи сумму');return;}
+    const cost = amount*1000000;
+    if(G.balance<cost){showNotif('❌ Недостаточно монет! Нужно '+fmt(cost));return;}
+
+    haptic('medium');
+    G.balance -= cost;
+    G.ton.withdrawn = (G.ton.withdrawn||0)+amount;
+    G.balance = Math.round(G.balance*100)/100;
+    input.value='';
+    showNotif('💎 Выведено '+amount.toFixed(2)+' TON!');
+    updateFastUI();
+    updateListsUI();
+  }
+  window.withdrawTon = withdrawTon;
+
+  // ─── REFERRALS ───
+
+  function copyRef(){
+    const link = document.getElementById('ref-link').textContent;
+    if(navigator.clipboard){navigator.clipboard.writeText(link);}
+    showNotif('📋 Ссылка скопирована!');
+  }
+  window.copyRef = copyRef;
+
+  function shareRef(){
+    const link = document.getElementById('ref-link').textContent;
+    const text = '⛏️ Играю в CryptoMiner Pro! Зарабатывай монеты просто тапая! +2000 монет при старте!\n'+link;
+    if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openTelegramLink){
+      Telegram.WebApp.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent(text));
+    } else if(navigator.share){
+      navigator.share({title:'CryptoMiner Pro',text,url:link});
+    } else {
+      showNotif('📤 Скопируй ссылку выше!');
+    }
+  }
+  window.shareRef = shareRef;
+
+  // ─── LEVEL ───
+
+  function checkLevel(){
+    const lv = computeLevel();
+    if(lv.lvl > lastLevel){
+      lastLevel = lv.lvl;
+      showLvlUp(lv);
+    }
+  }
+
+  function showLvlUp(lv){
+    document.getElementById('lvlup-num').textContent = lv.lvl;
+    document.getElementById('lvlup-sub').textContent = 'Ты стал: '+lv.name;
+    const sk = SKINS.find(s=>s.unlockLvl===lv.lvl);
+    if(sk) document.getElementById('lvlup-sub').textContent += ' • Разблокирован скин '+sk.name+'!';
+    document.getElementById('lvlup-overlay').style.display='flex';
+  }
+
+  function closeLvlUp(){document.getElementById('lvlup-overlay').style.display='none';}
+  window.closeLvlUp = closeLvlUp;
+
+  // ================================================================
+  // МОДУЛЬ: render.js — Все функции renderXxx() и updateFastUI()
+  // ================================================================
+
+  // было: fmt() использовал английские суффиксы M, B
+  // стало: русская локализация — К, М, МЛД, Т
+  function fmt(n){
+    if (n < 0) return '-' + fmt(-n);
+    if (n >= 999.5e9) return (n / 1e12).toFixed(2).replace(/\.?0+$/, '') + 'Т';
+    if (n >= 999500e3) return (n / 1e9).toFixed(2).replace(/\.?0+$/, '') + 'МЛД';
+    if (n >= 999500) return (n / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'М';
+    if (n >= 1000) {
+      const k = n / 1e3;
+      return k.toFixed(1).replace(/\.0$/, '') + 'К';
+    }
+    return Math.floor(n).toString();
+  }
+
+  function fmtTime(s){
+    s=Math.ceil(s);
+    if(s>=3600) return Math.floor(s/3600)+'ч '+Math.floor((s%3600)/60)+'м';
+    if(s>=60) return Math.floor(s/60)+'м '+s%60+'с';
+    return s+'с';
+  }
+
+  // было: updateFastUI() пересобирал DOM через innerHTML и вызывал updateListsUI()
+  // стало: только меняет textContent числовых элементов, НЕ пересобирает DOM
+  function updateFastUI(){
+    const passive = getPassiveRate();
+    const tapPow = getTapPower();
+    const lv = computeLevel();
+    const maxE = getMaxEnergy();
+    G.maxEnergy = maxE;
+
+    // Только textContent — никакого пересоздания DOM
+    document.getElementById('balance-display').textContent = fmt(G.balance);
+    document.getElementById('passive-display').textContent = passive.toFixed(1);
+    document.getElementById('tap-display').textContent = fmt(tapPow);
+    document.getElementById('tb-level').textContent = 'УРОВЕНЬ '+lv.lvl+' · '+lv.name.toUpperCase();
+    G.level = lv.lvl;
+
+    const ep = Math.min(G.energy/maxE*100,100).toFixed(0);
+    document.getElementById('energy-fill').style.width = ep+'%';
+    document.getElementById('energy-text').textContent = Math.floor(G.energy)+'/'+maxE;
+
+    // boost bar timer
+    if(G.activeBoost && Date.now()<G.boostEnd){
+      const left = (G.boostEnd-Date.now())/1000;
+      const el = document.getElementById('boost-timer');
+      if(el) el.textContent = fmtTime(left);
+    } else if(G.activeBoost){
+      G.activeBoost=null; updateBoostBar();
+    }
+
+    // TON available
+    if(G.ton.connected){
+      const el = document.getElementById('ton-available');
+      if(el) el.textContent = (G.balance / 1000000).toFixed(2) + ' TON';
+    }
+
+    checkQuests();
+  }
+
+  // было: updateListsUI() вызывался из gameTick каждый тик
+  // стало: только при смене вкладки, покупке, клейме квеста
+  function updateListsUI(){
+    renderTapUpgrades();
+    renderMiners();
+    renderBoosts();
+    renderQuests();
+    renderSkins();
+    renderAchievements();
+    renderLeaders();
+    renderStats();
+    updateTonUI();
+
+    const uid = getUserId();
+    const refEl = document.getElementById('ref-link');
+    if(refEl) refEl.textContent = 't.me/CryptoMinerBot?start=ref_'+uid;
+    const rcEl = document.getElementById('ref-count');
+    if(rcEl) rcEl.textContent = G.referrals;
+    const reEl = document.getElementById('ref-earned');
+    if(reEl) reEl.textContent = fmt(G.refEarned);
+  }
+
+  function renderTapUpgrades(){
+    const el = document.getElementById('tap-upgrades-list');
+    if(!el) return;
+    el.innerHTML = '';
+    for(const u of TAP_UPGRADES){
+      const lvl = G.upgrades[u.id]||0;
+      const cost = getUpgCost(u);
+      const maxed = lvl>=u.maxLvl;
+      const can = !maxed && G.balance>=cost;
+      const pct = (lvl/u.maxLvl*100);
+      const div = document.createElement('div');
+      div.className = 'upg-item'+(maxed?' maxed':can?' can-buy':'');
+      div.innerHTML = `
+        <div class="upg-icon">${u.icon}</div>
+        <div class="upg-body">
+          <div class="upg-name">${u.name}</div>
+          <div class="upg-desc">${u.desc}</div>
+          <div class="upg-prog"><div class="upg-bar" style="width:${pct}%"></div></div>
+        </div>
+        <div class="upg-right">
+          ${maxed?'<div class="upg-maxed">✅ МАКС</div>':'<div class="upg-cost">'+fmt(cost)+'</div><div class="upg-lvl">Ур.'+lvl+'/'+u.maxLvl+'</div>'}
+        </div>`;
+      if(!maxed) div.onclick = ()=>buyUpgrade(u.id);
+      el.appendChild(div);
+    }
+  }
+
+  function renderMiners(){
+    const el = document.getElementById('miners-list');
+    if(!el) return;
+    el.innerHTML = '';
+    for(const mn of MINERS){
+      const cnt = G.miners[mn.id]||0;
+      const cost = getMinerCost(mn);
+      const can = G.balance>=cost;
+      const div = document.createElement('div');
+      div.className = 'miner-item'+(can?' can-buy':'');
+      div.innerHTML = `
+        <div class="miner-icon">${mn.icon}</div>
+        <div class="miner-body">
+          <div class="miner-name">${mn.name}</div>
+          <div class="miner-rate">+${mn.rate}/сек · Всего: ${(cnt*mn.rate*getMulti()).toFixed(1)}/сек</div>
+          <div class="miner-cost">${fmt(cost)} монет</div>
+        </div>
+        <div class="miner-right">
+          <div class="miner-count">${cnt}</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.25)">куплено</div>
+        </div>`;
+      div.onclick = ()=>buyMiner(mn.id);
+      el.appendChild(div);
+    }
+  }
+
+  function renderBoosts(){
+    const el = document.getElementById('boosts-grid');
+    if(!el) return;
+    el.innerHTML = '';
+    const now = Date.now();
+    for(const b of BOOSTS){
+      const cd = G.boostCooldowns[b.id]||0;
+      const onCd = now < cd;
+      const isActive = G.activeBoost===b.id && now<G.boostEnd;
+      const div = document.createElement('div');
+      div.className = 'boost-card'+(isActive?' active-boost':onCd?' on-cooldown':'');
+      const cdLeft = onCd?fmtTime((cd-now)/1000):'';
+      const costStr = b.cost>0?fmt(b.cost)+' монет':'Бесплатно';
+      div.innerHTML = `
+        <div class="boost-icon">${b.icon}</div>
+        <div class="boost-name">${b.name}</div>
+        <div class="boost-desc">${b.desc}</div>
+        ${b.cost===0?'<div class="boost-free-tag">FREE</div>':''}
+        <button class="boost-btn">${isActive?'АКТИВЕН':onCd?cdLeft:costStr}</button>
+        ${onCd&&!isActive?'<div class="boost-cd">CD: '+cdLeft+'</div>':''}`;
+      if(!onCd&&!isActive) div.onclick = ()=>activateBoost(b.id);
+      el.appendChild(div);
+    }
+  }
+
+  function renderQuests(){
+    const el = document.getElementById('quests-list');
+    if(!el) return;
+    el.innerHTML = '';
+    for(const q of QUESTS){
+      const prog = getQuestProgress(q);
+      const pct = Math.min(prog/q.target*100,100);
+      const claimed = G.quests[q.id]==='claimed';
+      const done = prog>=q.target && !claimed;
+      const div = document.createElement('div');
+      div.className = 'quest-item';
+      div.innerHTML = `
+        <div class="quest-icon">${q.icon}</div>
+        <div class="quest-body">
+          <div class="quest-name">${q.name}${q.daily?' <span class="tag tag-new">ДЕНЬ</span>':''}</div>
+          <div class="quest-prog-row">
+            <div class="quest-track"><div class="quest-fill" style="width:${pct}%"></div></div>
+            <div class="quest-pct">${fmt(prog)}/${fmt(q.target)}</div>
+          </div>
+        </div>
+        <div class="quest-reward ${done?'done':claimed?'claimed':''}">
+          ${claimed?'✅ Получено':done?'🎁 Забрать':'+'+fmt(q.reward)}
+        </div>`;
+      const rewardBtn = div.querySelector('.quest-reward');
+      if(done && rewardBtn){
+        rewardBtn.addEventListener('click',()=>claimQuest(q.id));
+        rewardBtn.style.cursor='pointer';
+      }
+      el.appendChild(div);
+    }
+  }
+
+  function renderSkins(){
+    const el = document.getElementById('skins-grid');
+    if(!el) return;
+    el.innerHTML = '';
+    const lvl = computeLevel().lvl;
+    for(const sk of SKINS){
+      const unlocked = lvl>=sk.unlockLvl;
+      const active = G.activeSkin===sk.id;
+      const div = document.createElement('div');
+      div.className = 'skin-card'+(active?' active':!unlocked?' locked':'');
+      div.innerHTML = `
+        ${!unlocked?'<div class="skin-lock-icon">🔒</div>':''}
+        ${active?'<div class="skin-active-tag">ACTIVE</div>':''}
+        <div class="skin-preview">${sk.icon}</div>
+        <div class="skin-name">${sk.name}</div>
+        <div class="skin-unlock">${unlocked?'Разблокировано':sk.desc}</div>`;
+      div.onclick = ()=>selectSkin(sk.id);
+      el.appendChild(div);
+    }
+  }
+
+  function renderAchievements(){
+    const el = document.getElementById('ach-grid');
+    if(!el) return;
+    el.innerHTML = '';
+    for(const a of ACHIEVEMENTS){
+      const ok = a.check(G);
+      const div = document.createElement('div');
+      div.className = 'ach-card'+(ok?' unlocked':'');
+      div.innerHTML = `<div class="ach-card-icon">${a.icon}</div><div class="ach-card-name">${a.name}</div><div class="ach-card-desc">${ok?'🏅 Получено!':a.desc}</div>`;
+      el.appendChild(div);
+    }
+  }
+
+  // было: лидерборд из фейковых данных при каждом рендере
+  // стало: реальный лидерборд через API с кэшем на 60 секунд
+  let leaderboardCache = null;
+  let leaderboardCacheTime = 0;
+  const LEADERBOARD_TTL = 60000; // 60 секунд
+
+  const FAKE_LEADERS = [
+    {name:'CryptoKing_88',ava:'👑',score:9823456,lvl:10},
+    {name:'BitcoinMaster',ava:'₿',score:7234100,lvl:9},
+    {name:'MoonFarmer',ava:'🌙',score:5890000,lvl:9},
+    {name:'SatoshiBot',ava:'🤖',score:4120000,lvl:8},
+    {name:'ETH_Whale',ava:'🐋',score:3456000,lvl:8},
+    {name:'DiamondHands',ava:'💎',score:2890000,lvl:7},
+    {name:'HODLer_Pro',ava:'🚀',score:1234000,lvl:7},
+    {name:'DeFi_Master',ava:'⚡',score:890000,lvl:6},
+    {name:'BlockchainGuru',ava:'🔗',score:456000,lvl:5},
+  ];
+
+  async function fetchLeaderboard(){
+    const now = Date.now();
+    if(leaderboardCache && (now - leaderboardCacheTime) < LEADERBOARD_TTL){
+      return leaderboardCache;
+    }
+
+    // Пытаемся загрузить с сервера
+    const result = await api('GET', '/api/leaderboard');
+    if(result && result.ok && result.leaderboard && result.leaderboard.length > 0){
+      leaderboardCache = result.leaderboard;
+      leaderboardCacheTime = now;
+      return leaderboardCache;
+    }
+
+    // Фоллбэк на фейковые данные
+    leaderboardCache = null;
+    leaderboardCacheTime = 0;
+    return null; // renderLeaders использует фейки если null
+  }
+
+  async function renderLeaders(){
+    const el = document.getElementById('leaders-list');
+    if(!el) return;
+    el.innerHTML = '';
+
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    const myName = tgUser?tgUser.first_name:'Ты';
+
+    const serverData = await fetchLeaderboard();
+
+    let all;
+    if(serverData && serverData.length > 0){
+      // Серверный лидерборд
+      all = serverData.map(p => ({
+        name: p.name || p.userId,
+        ava: p.ava || '🧑',
+        score: Math.floor(p.totalEarned),
+        lvl: p.level || 1,
+      }));
+      // Добавляем себя если нет в списке
+      const myId = _userId;
+      const imInList = serverData.some(p => p.userId === myId);
+      if(!imInList){
+        all.push({name:myName, ava:'🧑', score:Math.floor(G.totalEarned), lvl:G.level, isMe:true});
+      } else {
+        // Помечаем себя
+        all = all.map(p => ({...p, isMe: false}));
+        const idx = serverData.findIndex(p => p.userId === myId);
+        if(idx >= 0) all[idx].isMe = true;
+      }
+    } else {
+      // Фейковый лидерборд
+      all = [...FAKE_LEADERS, {name:myName,ava:'🧑',score:Math.floor(G.totalEarned),lvl:G.level,isMe:true}];
+    }
+
+    all.sort((a,b)=>b.score-a.score);
+    all.slice(0,10).forEach((p,i)=>{
+      const rank = i+1;
+      const rc = rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
+      const div = document.createElement('div');
+      div.className = 'leader-item'+(p.isMe?' is-me':'');
+      const bg = ['rgba(0,229,255,.1)','rgba(124,58,237,.1)','rgba(0,255,136,.1)','rgba(255,59,92,.1)','rgba(255,215,0,.1)'];
+      div.innerHTML = `
+        <div class="leader-rank ${rc}">${rank<=3?['🥇','🥈','🥉'][rank-1]:rank}</div>
+        <div class="leader-ava" style="background:${bg[rank%5]}">${p.ava}</div>
+        <div class="leader-body">
+          <div class="leader-name">${p.name}${p.isMe?' (Ты)':''}</div>
+          <div class="leader-sub">Уровень ${p.lvl}</div>
+        </div>
+        <div class="leader-score">${fmt(p.score)}</div>`;
+      el.appendChild(div);
+    });
+
+    const updateEl = document.getElementById('leader-update');
+    if(updateEl){
+      const ago = Math.round((Date.now() - leaderboardCacheTime) / 1000);
+      updateEl.textContent = ago > 0 ? 'Обновлено '+ago+'с назад' : 'Обновлено только что';
+    }
+  }
+
+  function renderStats(){
+    const el = document.getElementById('stats-list');
+    if(!el) return;
+    const stats = [
+      ['💰 Всего заработано', fmt(G.totalEarned)+' монет'],
+      ['👆 Всего тапов', fmt(G.totalTaps)],
+      ['⛏️ Пассивный доход', getPassiveRate().toFixed(1)+'/сек'],
+      ['🎯 Сила тапа', fmt(getTapPower())+'/тап'],
+      ['🏅 Уровень', G.level+' — '+computeLevel().name],
+      ['💎 TON выведено', (G.ton.withdrawn||0).toFixed(2)+' TON'],
+      ['👥 Рефералов', G.referrals],
+    ];
+    el.innerHTML = stats.map(([l,v])=>`
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border);">
+        <span style="color:rgba(255,255,255,.4);">${l}</span>
+        <span style="font-weight:700;font-family:'Orbitron',monospace;font-size:11px;">${v}</span>
+      </div>`).join('');
+  }
+
+  // ================================================================
+  // МОДУЛЬ: main.js — Навигация, утилиты, игровой цикл, инициализация
+  // ================================================================
+
+  function switchPage(name, btn){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('page-'+name).classList.add('active');
+    btn.classList.add('active');
+    const cz = document.getElementById('coin-zone');
+    if(name==='mine'){cz.style.display='flex';}else{cz.style.display='none';}
+    currentPage = name;
+    // было: updateListsUI() вызывался каждый тик → стало: только при смене вкладки
+    updateListsUI();
+  }
+  window.switchPage = switchPage;
+
+  function spawnFloat(x,y,text){
+    const el = document.createElement('div');
+    el.className = 'floater';
+    el.textContent = text;
+    el.style.left=(x-24)+'px';
+    el.style.top=(y-24)+'px';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),900);
+  }
+
+  function showNotif(msg){
+    document.querySelectorAll('.notif').forEach(n=>n.remove());
+    const el = document.createElement('div');
+    el.className='notif';
+    el.textContent=msg;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),2200);
+  }
+
+  // ─── PARTICLES ───
+
+  // было: частицы рендерятся даже когда вкладка неактивна
+  // стало: останавливаем Canvas-анимацию при неактивной вкладке
+  let particlesActive = true;
+
+  document.addEventListener('visibilitychange', () => {
+    particlesActive = !document.hidden;
+  });
+
+  function initParticles(){
+    const cv = document.getElementById('particles');
+    const ctx = cv.getContext('2d');
+    cv.width=window.innerWidth;cv.height=window.innerHeight;
+    const pts = Array.from({length:50},()=>({
+      x:Math.random()*cv.width,y:Math.random()*cv.height,
+      r:Math.random()*1.2+.2,
+      vx:(Math.random()-.5)*.2,vy:-Math.random()*.4-.1,
+      a:Math.random()*.4+.05
+    }));
+    function draw(){
+      // было: анимация работает всегда → стало: пропускаем кадр если вкладка неактивна
+      if(!particlesActive) return requestAnimationFrame(draw);
+
+      ctx.clearRect(0,0,cv.width,cv.height);
+      for(const p of pts){
+        ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(0,229,255,${p.a})`;ctx.fill();
+        p.x+=p.vx;p.y+=p.vy;
+        if(p.y<0){p.y=cv.height;p.x=Math.random()*cv.width;}
+        if(p.x<0||p.x>cv.width)p.vx*=-1;
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  // ─── GAME LOOP ───
+
+  let lastTick = Date.now();
+  function gameTick(){
+    const now = Date.now();
+    const dt = (now-lastTick)/1000;
+    lastTick = now;
+    const maxE = getMaxEnergy();
+    G.maxEnergy = maxE;
+
+    // passive income
+    const pr = getPassiveRate();
+    if(pr>0){
+      G.balance+=pr*dt;
+      G.totalEarned+=pr*dt;
+      G.questProgress.earned_today=(G.questProgress.earned_today||0)+pr*dt;
+    }
+
+    // energy regen
+    if(G.energy<maxE) G.energy = Math.min(maxE, G.energy+dt*3);
+
+    // Auto-tap boost
+    if(G.activeBoost && Date.now() < G.boostEnd){
+      const b = BOOSTS.find(x=>x.id===G.activeBoost);
+      if(b && b.autoTap){
+        const tapsPerSec = b.autoTap;
+        const power = getTapPower();
+        const earned = power * tapsPerSec * dt;
+        G.balance += earned;
+        G.totalEarned += earned;
+        G.questProgress.earned_today = (G.questProgress.earned_today||0) + earned;
+
+        G.autoTapFraction = (G.autoTapFraction||0) + tapsPerSec * dt;
+        if(G.autoTapFraction >= 1){
+          const wholeTaps = Math.floor(G.autoTapFraction);
+          G.totalTaps += wholeTaps;
+          G.autoTapFraction -= wholeTaps;
+        }
+      }
+    }
+
+    // Rounding floating point
+    G.balance = Math.round(G.balance * 100) / 100;
+    G.totalEarned = Math.round(G.totalEarned * 100) / 100;
+
+    // daily quest reset
+    const today = new Date().toDateString();
+    if(G.questLastDay !== today){
+      G.questLastDay = today;
+      G.questProgress.taps_today=0;
+      G.questProgress.earned_today=0;
+      for(const q of QUESTS){if(q.daily && G.quests[q.id]==='claimed')delete G.quests[q.id];}
+    }
+
+    // было: updateListsUI() вызывался каждый тик → стало: только updateFastUI()
+    updateFastUI();
+  }
+
+  // ─── INIT ───
+
+  window.addEventListener('load', async ()=>{
+    if(window.Telegram&&Telegram.WebApp){
+      Telegram.WebApp.ready();
+      Telegram.WebApp.expand();
+      const user = Telegram.WebApp.initDataUnsafe?.user;
+      if(user){
+        document.getElementById('tb-name').textContent = user.first_name+(user.last_name?' '+user.last_name:'');
+        if(user.photo_url){
+          const ava=document.getElementById('tb-avatar');
+          ava.style.background=`url(${user.photo_url}) center/cover`;
+          ava.textContent='';
+        }
+      }
+    }
+
+    // Сначала пытаемся загрузить с сервера
+    const serverOk = await loadGameFromServer();
+    if(!serverOk){
+      // Фоллбэк на localStorage
+      loadGameLocal();
+    }
+
+    await initReferral();
+
+    lastLevel = computeLevel().lvl;
+    applySkin();
+    initParticles();
+
+    document.getElementById('coin-zone').style.display='flex';
+
+    updateFastUI();
+    updateListsUI();
+
+    setInterval(gameTick, 100);
+    setInterval(saveGame, 10000);
+    setInterval(()=>{ if(currentPage==='boosts') updateListsUI(); }, 1000);
+
+    // Периодическая синхронизация с сервером (каждые 30 сек)
+    setInterval(async ()=>{
+      if(!_isOnline) return;
+      const result = await api('POST', '/api/sync');
+      if(result && result.ok){
+        applyServerState(result.state);
+        updateFastUI();
+      }
+    }, 30000);
+  });
+
+  window.addEventListener('beforeunload', saveGame);
+
+})();
+</script>
+</body>
+</html>
